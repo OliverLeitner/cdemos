@@ -1,10 +1,10 @@
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <json-c/json.h>
 
-struct Customer {
+typedef struct Customer {
    int  customerNumber;
    char customerName[50];
    char contactFirstName[100];
@@ -56,7 +56,7 @@ int get_num_rows(void)
     return counted; // count val, array starts at 0
 }
 
-struct Customer * get_data()
+struct Customer * get_data(int num_rows)
 {
     MYSQL *con = mysql_init(NULL);
 
@@ -87,42 +87,45 @@ struct Customer * get_data()
     int num_fields = mysql_num_fields(result);
 
     // char *o_ptr = (char *)malloc(num_rows * sizeof(char)); // output;
-    struct Customer customers[1000];
+    struct Customer *customers[1000];
+    customer *c_ptr = (customer *)malloc(num_rows * sizeof(customer));
     unsigned int iterator = 0;
 
     MYSQL_ROW row;
 
     while ((row = mysql_fetch_row(result)))
     {
-        struct Customer customer;
-        strcpy( customer.customerName, row[1]); // cannot be NULL
-        strcpy( customer.contactFirstName, row[2] ? row[2] : NULL);
-        strcpy( customer.contactLastName, row[3] ? row[3] : NULL);
-        customer.customerNumber = atoi(row[0]);
-        customers[iterator] = customer;
-        // memcpy(customer, &customers, sizeof customers);
-        puts(customers[iterator].customerName); // stuff gets corretly written into struct array.
-        iterator = iterator + 1;
+        struct Customer scustomer;
+        strcpy( scustomer.customerName, row[1]); // cannot be NULL
+        strcpy( scustomer.contactFirstName, row[2] ? row[2] : NULL);
+        strcpy( scustomer.contactLastName, row[3] ? row[3] : NULL);
+        scustomer.customerNumber = atoi(row[0]);
+        customers[iterator] = &scustomer;
+        // puts(customers[iterator]->customerName); // stuff gets corretly written into struct array.
+        iterator++;
     }
 
     mysql_free_result(result);
     mysql_close(con);
 
-    return customers;
+    return c_ptr;
 }
 
 // FIXME: this doesnt work, segfault... something with the length...
-void objToJsonSerialize(struct Customer *customers) {
-    int length = sizeof(customers);
-    for (int i = 1; i < length; i++) {
-        // printf("%s", customers[i].customerName);
+void objToJsonSerialize(struct Customer *customers, int num_rows) {
+    for (int i = 1; i < (num_rows + 1); i++) {
+        struct Customer * dcustomer = &customers[i];
+        // printf("%s", dcustomer->customerName);
+        // puts(scustomer.customerName);
+        // printf("%d", i);
+        puts(dcustomer->customerName);
     }
 }
 
 int main(int argc, char **argv) {
-    // int num_rows = get_num_rows();
+    int num_rows = get_num_rows();
     // printf("num rows: %d", num_rows);
-    // printf("%s", get_data(num_rows));
-    objToJsonSerialize(get_data());
+    // puts(*get_data(num_rows));
+    objToJsonSerialize(get_data(num_rows), num_rows);
     exit(0);
 }
