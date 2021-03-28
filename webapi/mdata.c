@@ -11,11 +11,6 @@ typedef struct Customer {
    char contactLastName[100];
 } customer;
 
-/*struct Customers {
-    struct Customer *arr;
-    unsigned int count;
-} customers;*/
-
 void finish_with_error(MYSQL *con)
 {
     fprintf(stderr, "%s\n", mysql_error(con));
@@ -53,7 +48,7 @@ int get_num_rows(void)
 
     MYSQL_ROW row = mysql_fetch_row(result);
     int counted = atoi(row[0]);
-    return counted; // count val, array starts at 0
+    return counted;
 }
 
 struct Customer * get_data(int num_rows)
@@ -86,7 +81,6 @@ struct Customer * get_data(int num_rows)
 
     int num_fields = mysql_num_fields(result);
 
-    // char *o_ptr = (char *)malloc(num_rows * sizeof(char)); // output;
     struct Customer *customers[1000];
     customer *c_ptr = (customer *)malloc(num_rows * sizeof(customer));
     unsigned int iterator = 0;
@@ -100,8 +94,7 @@ struct Customer * get_data(int num_rows)
         strcpy( scustomer.contactFirstName, row[2] ? row[2] : NULL);
         strcpy( scustomer.contactLastName, row[3] ? row[3] : NULL);
         scustomer.customerNumber = atoi(row[0]);
-        customers[iterator] = &scustomer;
-        // puts(customers[iterator]->customerName); // stuff gets corretly written into struct array.
+        c_ptr[iterator] = scustomer;
         iterator++;
     }
 
@@ -111,21 +104,14 @@ struct Customer * get_data(int num_rows)
     return c_ptr;
 }
 
-// FIXME: this doesnt work, segfault... something with the length...
 void objToJsonSerialize(struct Customer *customers, int num_rows) {
-    for (int i = 1; i < (num_rows + 1); i++) {
-        struct Customer * dcustomer = &customers[i];
-        // printf("%s", dcustomer->customerName);
-        // puts(scustomer.customerName);
-        // printf("%d", i);
-        puts(dcustomer->customerName);
+    for (int i = 0; i < num_rows; i++) {
+        puts(customers[i].customerName);
     }
 }
 
 int main(int argc, char **argv) {
     int num_rows = get_num_rows();
-    // printf("num rows: %d", num_rows);
-    // puts(*get_data(num_rows));
     objToJsonSerialize(get_data(num_rows), num_rows);
     exit(0);
 }
